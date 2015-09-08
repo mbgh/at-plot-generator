@@ -12,4 +12,4 @@ gets embedded into a LaTeX container file.
 With the provided AT plot generator, AT plots like the one shown in the
 following image can easily be created:
 
-![AT plot example](https://github.com/mbgh/at-plot-generator/blob/master/at_plot_sample.png)
+![AT plot example](https://github.com/mbgh/at-plot-generator/blob/master/at-plot-sample.png)
