@@ -5,12 +5,24 @@ reset
 ################################################################################
 ## Choose a terminal (output format)
 
+## 1 ... wxt terminal for interactive setup of the AT plot.
+## 2 ... epslatex terminal for output AT plot.
+term = 2;
+
 ## wxt
 ######
 ## - Use this for testing since the graph will be shown in a new window.
 ## - Note that dashed lines (linetype (lt) = 2) will not appear as dashed.
-# wxt_font = "SVBasic Manual, 12"
-# set terminal wxt size 800,500 enhanced font wxt_font persist
+if (term == 1) \
+	 wxt_font = "SVBasic Manual, 12"; \
+	 set terminal wxt size 800,500 enhanced font wxt_font persist;
+
+## epslatex
+## - Produce a vector output file (PDF) with text elements provided as a LaTex
+##   document.
+if (term == 2) \
+ 	 set terminal epslatex color size 5,3.5; \
+ 	 set output 'output.tex';
 
 ## png
 ######
@@ -34,11 +46,6 @@ reset
 # set terminal postscript eps size 5.0,4.0 enhanced color font 'Helvetica,30' linewidth 2
 # set output 'output.eps'
 
-## epslatex
-## - Produce a vector output file (PDF) with text elements provided as a LaTex
-##   document. 
-set terminal epslatex color size 6,2.5
-set output 'output.tex'
 
 
 ################################################################################
@@ -93,12 +100,12 @@ set grid back ls 12
 plotTitle = '' #AT Plot of Various AES-128 Synthesis Runs'
 
 ## Axis settings
-xAxisMin   =  0.3
-xAxisMax   =  1.6
-xAxisLabel = '$t_{lp}$ [ns]'
+xAxisMin   =  1.0
+xAxisMax   =  3.5
+xAxisLabel = 'Clock Period [ns]'
 
-yAxisMin   = 1
-yAxisMax   = 7
+yAxisMin   = 140
+yAxisMax   = 180
 yAxisLabel = 'Area [kGE]'
 
 ## Settings of the key (lengend).
@@ -115,12 +122,6 @@ set xrange [xAxisMin:xAxisMax]
 set yrange [yAxisMin:yAxisMax]
 
 ## Add some nice isolines for the constant AT product.
-iso1(x) = 1/x
-iso15(x) = 1.5/x
-iso2(x) = 2/x
-iso25(x) = 2.5/x
-iso3(x) = 3/x
-iso35(x) = 3.5/x
 iso40(x) = 40/x
 iso60(x) = 60/x
 iso80(x) = 80/x
@@ -129,19 +130,30 @@ iso120(x) = 120/x
 iso150(x) = 150/x
 iso160(x) = 160/x
 iso180(x) = 180/x
+iso200(x) = 200/x
 iso210(x) = 210/x
 iso220(x) = 220/x
+iso225(x) = 225/x
 iso240(x) = 240/x
+iso250(x) = 250/x
+iso300(x) = 300/x
+iso400(x) = 400/x
+iso500(x) = 500/x
+iso600(x) = 600/x
+iso700(x) = 700/x
+iso800(x) = 800/x
 
 ## Create a vertical line where we reach 100Gbit/s for both the one-core and the
 ## two-core approach.
-# set arrow from 1.28,50 to 1.28,200 nohead lc rgb 'red'
-# set arrow from 2.56,50 to 2.56,200 nohead lc rgb 'red'
+# set arrow from 1.28,240 to 1.28,300 nohead lc rgb 'red'
+# set arrow from 2.56,240 to 2.56,300 nohead lc rgb 'red'
 
 ## Do the actual plotting of the AT data.
-plot iso1(x) t '' ls 10, iso15(x) t '' ls 10, iso2(x) t '' ls 10, iso25(x) t '' ls 10, \
-		 iso3(x) t '' ls 10, iso35(x) t '' ls 10, \
-		 './at_data-less.dat' u ($6):($7/1000) t 'Legend Description' w p ls 1
+plot iso225(x) t '' ls 10, iso250(x) t '' ls 10, iso300(x) t '' ls 10, iso400(x) t '' ls 10, \
+		 'top_down/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Top-Down' w p ls 1, \
+		 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
+
+
 		 
 
 ################################################################################
