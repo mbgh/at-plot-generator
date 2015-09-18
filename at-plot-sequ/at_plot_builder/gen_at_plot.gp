@@ -7,7 +7,7 @@ reset
 
 ## 1 ... wxt terminal for interactive setup of the AT plot.
 ## 2 ... epslatex terminal for output AT plot.
-term = 2;
+term = 1;
 
 ## wxt
 ######
@@ -100,12 +100,12 @@ set grid back ls 12
 plotTitle = '' #AT Plot of Various AES-128 Synthesis Runs'
 
 ## Axis settings
-xAxisMin   =  1.0
-xAxisMax   =  3.5
+xAxisMin   =  0.8
+xAxisMax   =  1.6
 xAxisLabel = 'Clock Period [ns]'
 
-yAxisMin   = 140
-yAxisMax   = 180
+yAxisMin   = 180
+yAxisMax   = 280
 yAxisLabel = 'Area [kGE]'
 
 ## Settings of the key (lengend).
@@ -143,15 +143,18 @@ iso600(x) = 600/x
 iso700(x) = 700/x
 iso800(x) = 800/x
 
-## Create a vertical line where we reach 100Gbit/s for both the one-core and the
-## two-core approach.
-# set arrow from 1.28,240 to 1.28,300 nohead lc rgb 'red'
-# set arrow from 2.56,240 to 2.56,300 nohead lc rgb 'red'
+## Create vertical line indicating the fastest synthesis results.
+set style line 20 lc rgb 'red'
+set style arrow 1 heads size screen 0.008,90 ls 20
+set arrow from 0.87,180 to 0.87,280 as 1
+
+## Create a vertical line where we reach 100Gbit/s.
+# set arrow from 0.87,180 to 0.87,280 nohead lc rgb 'red'
 
 ## Do the actual plotting of the AT data.
-plot iso225(x) t '' ls 10, iso250(x) t '' ls 10, iso300(x) t '' ls 10, iso400(x) t '' ls 10, \
-		 'top_down/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Top-Down' w p ls 1, \
-		 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
+plot iso200(x) t '' ls 10, iso225(x) t '' ls 10, iso250(x) t '' ls 10, iso300(x) t '' ls 10, iso400(x) t '' ls 10, \
+		 'at_data-less.dat' u ($6):($7/1000) t 'GCM-AES-128 - LUT S-box - Top-Down' w p ls 1
+		 # 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
 
 
 		 
