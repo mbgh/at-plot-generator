@@ -29,4 +29,3 @@ clean:
 	@echo "***[MAKE]*** Cleaning directory ..."
 	@rm -f $(TEX_SRC).aux $(TEX_SRC).log $(TEX_SRC).tex~ Makefile~
 	@rm -f $(GP_SRC)~ $(GP_OUT).tex $(GP_OUT).eps $(GP_OUT).pdf
-

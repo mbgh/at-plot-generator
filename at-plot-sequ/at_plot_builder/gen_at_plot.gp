@@ -14,15 +14,15 @@ term = 1;
 ## - Use this for testing since the graph will be shown in a new window.
 ## - Note that dashed lines (linetype (lt) = 2) will not appear as dashed.
 if (term == 1) \
-	 wxt_font = "SVBasic Manual, 12"; \
-	 set terminal wxt size 800,500 enhanced font wxt_font persist;
+   wxt_font = "SVBasic Manual, 12"; \
+   set terminal wxt size 800,500 enhanced font wxt_font persist;
 
 ## epslatex
 ## - Produce a vector output file (PDF) with text elements provided as a LaTex
 ##   document.
 if (term == 2) \
- 	 set terminal epslatex color size 5,3.5; \
- 	 set output 'output.tex';
+   set terminal epslatex color size 5,3.5; \
+   set output 'output.tex';
 
 ## png
 ######
@@ -153,12 +153,7 @@ set arrow from 0.87,180 to 0.87,280 as 1
 
 ## Do the actual plotting of the AT data.
 plot iso200(x) t '' ls 10, iso225(x) t '' ls 10, iso250(x) t '' ls 10, iso300(x) t '' ls 10, iso400(x) t '' ls 10, \
-		 'at_data-less.dat' u ($6):($7/1000) t 'GCM-AES-128 - LUT S-box - Top-Down' w p ls 1
-		 # 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
-
-
-		 
+     'at_data-less.dat' u ($6):($7/1000) t 'GCM-AES-128 - LUT S-box - Top-Down' w p ls 1
+     # 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
 
 ################################################################################
-
-

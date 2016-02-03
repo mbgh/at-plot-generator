@@ -152,7 +152,7 @@ my $out     = "at_data.dat";            # Path to the output file
 my $useGE   = 1;                        # Use gate equivalents (GE) or not
 my $ge      = 1.44;                     # Size of one gate equivalent (GE)
 my $rootDir = ".";                      # Directory containing the subdirectories for the different synthesis runs.
-my $area    = "reports/area.rpt";	      # Path to the area reports from wihtin the subdirectories.
+my $area    = "reports/area.rpt";         # Path to the area reports from wihtin the subdirectories.
 my $timing  = "reports/timing_ss.rpt";  # Path to the timing reports from wihtin the subdirectories.
 my $splitVio = 0;                       # Split constraints violating datasets from non-violating ones using a blank line.
 ################################################################################27
@@ -182,130 +182,130 @@ print OUT "##    <SLACK>             ... Available slack\n";
 print OUT "##    <DATA_ARRIVAL_TIME> ... Data arrival time of the critical path (=<PERIOD_CONSTRAINT>-<SLACK>+<SETUP_TIME>)\n";
 print OUT "##    <PERIOD>            ... Actual period with which the circuit will run (=<PERIOD_CONSTRAINT>-<SLACK>)\n";
 if ( $useGE ) {
-	print OUT "##    <AREA>              ... Resulting area in gate equivalents\n";
+  print OUT "##    <AREA>              ... Resulting area in gate equivalents\n";
 } else {
-	print OUT "##    <AREA>              ... Resulting area in square micrometer\n";
+  print OUT "##    <AREA>              ... Resulting area in square micrometer\n";
 }
 print OUT "##\n";
 
 foreach my $subdir (@subdirs) {
-	print "Investigating directory:         $subdir \n" if $verb;
+  print "Investigating directory:         $subdir \n" if $verb;
 
-	##############################################################################
-	## Start by parsing some timinig-specific information from the timing report.
+  ##############################################################################
+  ## Start by parsing some timinig-specific information from the timing report.
 
-	my $requTime;
-	my $slack;
-	my $dataArrTime;
-	my $periodConstr;
-	my $period;
+  my $requTime;
+  my $slack;
+  my $dataArrTime;
+  my $periodConstr;
+  my $period;
 
-	print "Trying to parse the data required time (frequency/max delay) from: $subdir/$timing\n" if $verb;
+  print "Trying to parse the data required time (frequency/max delay) from: $subdir/$timing\n" if $verb;
 
-	## Check if timing report actually exists.
-	unless ( -e "$subdir/$timing" ) {
-		print "Could not find the timing report: $subdir/$timing\n";
-		next;
+  ## Check if timing report actually exists.
+  unless ( -e "$subdir/$timing" ) {
+    print "Could not find the timing report: $subdir/$timing\n";
+    next;
   }
 
-	## Determine the actual period constraint and the library setup time (if
-	## available).
-	my $prevLine = "";
+  ## Determine the actual period constraint and the library setup time (if
+  ## available).
+  my $prevLine = "";
   ## Note that we set the setup time per default to zero as it could be that we
   ## parse a fully combinational result (from the in-to-out timing reports),
   ## where we have no setup time at all.
-	my $setupTime = 0;
-	open (IN, "< $subdir/$timing") or die "Could not open file: $subdir/$timing\n";
-	while (<IN>) {
-		if ($_ =~ m/^\s*data required time\s*(-?\d*\.\d*)\s*/) {
-			$requTime = $1;
-			print "==> Data required time: $requTime \n" if $verb;
-			$periodConstr = $requTime;
+  my $setupTime = 0;
+  open (IN, "< $subdir/$timing") or die "Could not open file: $subdir/$timing\n";
+  while (<IN>) {
+    if ($_ =~ m/^\s*data required time\s*(-?\d*\.\d*)\s*/) {
+      $requTime = $1;
+      print "==> Data required time: $requTime \n" if $verb;
+      $periodConstr = $requTime;
 
-			## Check if there was a library setup time.
-			if ($prevLine =~ m/^\s*library setup time\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*/) {
-				$setupTime = $1;
-				print "==> Library setup time: $setupTime\n" if $verb;
+      ## Check if there was a library setup time.
+      if ($prevLine =~ m/^\s*library setup time\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*/) {
+        $setupTime = $1;
+        print "==> Library setup time: $setupTime\n" if $verb;
 
-				## Since we have a library setup time, the original period constraind is
-				## the data required time - the library setup time.
-				$periodConstr = $periodConstr - $setupTime;
-			}
+        ## Since we have a library setup time, the original period constraind is
+        ## the data required time - the library setup time.
+        $periodConstr = $periodConstr - $setupTime;
+      }
 
-			## Print two decimal places and two places in front of the comma into the
-			## file (5-2(decimal)-1(decimal place) = 2).
-			printf OUT "%5.2f", $periodConstr;
-			printf OUT "  %5.2f", $setupTime;
+      ## Print two decimal places and two places in front of the comma into the
+      ## file (5-2(decimal)-1(decimal place) = 2).
+      printf OUT "%5.2f", $periodConstr;
+      printf OUT "  %5.2f", $setupTime;
 
-			last; ## Stop searching for the slack in the timing report.
-		}
-		## Store previous line in order to determine a potential library setup time
-		## once the data required time has been found.
-		$prevLine = $_;
-	}
-
-	print "Trying to parse the slack from: $subdir/$timing\n" if $verb;
-
-	## Check if timing report actually exists.
-	unless ( -e "$subdir/$timing" ) {
-		print "Could not find the timing report: $subdir/$timing\n";
-		next;
+      last; ## Stop searching for the slack in the timing report.
+    }
+    ## Store previous line in order to determine a potential library setup time
+    ## once the data required time has been found.
+    $prevLine = $_;
   }
 
-	## Search for the slack in the timing report.
-	open (IN, "< $subdir/$timing") or die "Could not open file: $subdir/$timing\n";
-	while (<IN>) {
-		## The following regex will parse the slack from the timing report. It
-		## should match file rows like the followings (note that there are several
-		## "non-capturing groups" in there, which are initiated with a "?:").
-		##
-		## SAMPLE 1:   slack (MET)                                         0.53
-		## SAMPLE 2:   slack (VIOLATED: increase signficant digits)        0.00
-		## SAMPLE 3:   slack (VIOLATED)                                 -0.6596
-		if ($_ =~ m/^\s*slack\s*\((\w*)(?:\)|:(?:\w*\s*)*\))\s*(-?\d*\.\d*)\s*/) {
-			$slack = $2;
-			print "==> Slack: $slack ($1)\n" if $verb;
-			if ( $1 eq "MET" ) {
-				print OUT "  1";
-			} else {
-				print OUT "  0";
-			}
-			printf OUT "  %5.2f", $slack;
-			last; ## Stop searching for the slack in the timing report.
-		}
-	}
-	$dataArrTime = $requTime-$slack;
-	$period = $periodConstr-$slack;
+  print "Trying to parse the slack from: $subdir/$timing\n" if $verb;
 
-	printf OUT " %6.2f", $dataArrTime;
-	printf OUT " %6.2f", $period;
-
-	##############################################################################
-	## Go on by parsing the area information.
-
-	print "Trying to parse the area from:   $subdir/$area\n" if $verb;
-
-	## Check if area report actually exists.
-	unless ( -e "$subdir/$area" ) {
-		print "Could not find the area report: $subdir/$area\n";
-		next;
+  ## Check if timing report actually exists.
+  unless ( -e "$subdir/$timing" ) {
+    print "Could not find the timing report: $subdir/$timing\n";
+    next;
   }
 
-	## Search for the total cell area in the area report.
-	open (IN, "< $subdir/$area") or die "Could not open file: $subdir/$area\n";
-	while (<IN>) {
-		if ($_ =~ m/^Total cell area:\s*(\d*\.\d*)\s*/) {
-			print "==> Total cell area: $1\n" if $verb;
-			if ( $useGE ) {
-				## Print area in gate equivalents (GE) to output file.
-				printf  OUT "  %8.2f\n", $1/$ge;
-			} else {
-				## Print area in \mum^2 to output file.
-				printf OUT "  %8.2f\n", $1;
-			}
-			last; ## Stop searching for the total area in the area report.
-		}
-	}
+  ## Search for the slack in the timing report.
+  open (IN, "< $subdir/$timing") or die "Could not open file: $subdir/$timing\n";
+  while (<IN>) {
+    ## The following regex will parse the slack from the timing report. It
+    ## should match file rows like the followings (note that there are several
+    ## "non-capturing groups" in there, which are initiated with a "?:").
+    ##
+    ## SAMPLE 1:   slack (MET)                                         0.53
+    ## SAMPLE 2:   slack (VIOLATED: increase signficant digits)        0.00
+    ## SAMPLE 3:   slack (VIOLATED)                                 -0.6596
+    if ($_ =~ m/^\s*slack\s*\((\w*)(?:\)|:(?:\w*\s*)*\))\s*(-?\d*\.\d*)\s*/) {
+      $slack = $2;
+      print "==> Slack: $slack ($1)\n" if $verb;
+      if ( $1 eq "MET" ) {
+        print OUT "  1";
+      } else {
+        print OUT "  0";
+      }
+      printf OUT "  %5.2f", $slack;
+      last; ## Stop searching for the slack in the timing report.
+    }
+  }
+  $dataArrTime = $requTime-$slack;
+  $period = $periodConstr-$slack;
+
+  printf OUT " %6.2f", $dataArrTime;
+  printf OUT " %6.2f", $period;
+
+  ##############################################################################
+  ## Go on by parsing the area information.
+
+  print "Trying to parse the area from:   $subdir/$area\n" if $verb;
+
+  ## Check if area report actually exists.
+  unless ( -e "$subdir/$area" ) {
+    print "Could not find the area report: $subdir/$area\n";
+    next;
+  }
+
+  ## Search for the total cell area in the area report.
+  open (IN, "< $subdir/$area") or die "Could not open file: $subdir/$area\n";
+  while (<IN>) {
+    if ($_ =~ m/^Total cell area:\s*(\d*\.\d*)\s*/) {
+      print "==> Total cell area: $1\n" if $verb;
+      if ( $useGE ) {
+        ## Print area in gate equivalents (GE) to output file.
+        printf  OUT "  %8.2f\n", $1/$ge;
+      } else {
+        ## Print area in \mum^2 to output file.
+        printf OUT "  %8.2f\n", $1;
+      }
+      last; ## Stop searching for the total area in the area report.
+    }
+  }
 
 }
 
@@ -339,13 +339,13 @@ Print the current settings of the script.
 =cut
 
 sub printSettings {
-	write2Shell("***** COMPILE SCRIPT SETTINGS ****************************************\n");
-	write2Shell("Verbose Mode:        $verb\n");
-	write2Shell("Output file::        $out\n");
-	write2Shell("Root Directory:      $rootDir\n");
-	write2Shell("Area Reports Path:   $area\n");
-	write2Shell("Timing Reports Path: $timing\n");
-	write2Shell("**********************************************************************\n");
+  write2Shell("***** COMPILE SCRIPT SETTINGS ****************************************\n");
+  write2Shell("Verbose Mode:        $verb\n");
+  write2Shell("Output file::        $out\n");
+  write2Shell("Root Directory:      $rootDir\n");
+  write2Shell("Area Reports Path:   $area\n");
+  write2Shell("Timing Reports Path: $timing\n");
+  write2Shell("**********************************************************************\n");
 }
 
 
@@ -357,32 +357,32 @@ Parse the arguments specified upon the command line.
 
 sub parseCmdLineArgs {
 
-	my $help = 0;  # Display help overview
-	my $man  = 0;  # Display manual page for script
-	my $ver  = 0;  # Display the version number
+  my $help = 0;  # Display help overview
+  my $man  = 0;  # Display manual page for script
+  my $ver  = 0;  # Display the version number
 
-	## Parse command line options (if provided, otherwise keep their defaults) and
-	## print usage if there is a syntax error, or if usage was explicitly request.
-	GetOptions (
+  ## Parse command line options (if provided, otherwise keep their defaults) and
+  ## print usage if there is a syntax error, or if usage was explicitly request.
+  GetOptions (
     'help|?'        => \$help,
     'man'           => \$man,
     'verb:i'        => \$verb,
     'out:s'         => \$out,
-		'useGE:i'       => \$useGE,
-		'ge:f'          => \$ge,
-		'splitVio:i'    => \$splitVio,
+    'useGE:i'       => \$useGE,
+    'ge:f'          => \$ge,
+    'splitVio:i'    => \$splitVio,
     'ver|v|version' => \$ver) or pod2usage(2);
-	pod2usage(1) if $help;
-	pod2usage(-verbose => 2) if $man;
+  pod2usage(1) if $help;
+  pod2usage(-verbose => 2) if $man;
 
-	printSettings() if $verb;
+  printSettings() if $verb;
 
-	if ( $ver ) {
-		printf "***** parse_at_data.pl release version = %3.1f\n", $release;
-		## Exit script with exit code 0 in order to tell a potentially calling shell
-		## that this is an intended exit.
-		exit 0;
-	}
+  if ( $ver ) {
+    printf "***** parse_at_data.pl release version = %3.1f\n", $release;
+    ## Exit script with exit code 0 in order to tell a potentially calling shell
+    ## that this is an intended exit.
+    exit 0;
+  }
 }
 
 =head2 sortFileRows
@@ -402,51 +402,51 @@ Path to the file to be sorted.
 =cut
 
 sub sortFileRows {
-	print "Trying to sort rows of file: $_[0]\n" if $verb;
+  print "Trying to sort rows of file: $_[0]\n" if $verb;
 
-	my $inpFile   = $_[0];   # Provided input file path.
-	my %inp;                 # Hash holding all input rows in memory (for sorting).
+  my $inpFile   = $_[0];   # Provided input file path.
+  my %inp;                 # Hash holding all input rows in memory (for sorting).
 
-	## Read all data-containing rows from input file into memory.
-	my $hdrRowCnt = 0;
-	my @header;
-	open(IN, "<$inpFile") or die "Can't open input file: $!";
-	while ( <IN> ){
+  ## Read all data-containing rows from input file into memory.
+  my $hdrRowCnt = 0;
+  my @header;
+  open(IN, "<$inpFile") or die "Can't open input file: $!";
+  while ( <IN> ){
 
-		## Look for data-containing rows.
-		if ( $_ =~ m/\s*(\d*\.\d*)\s*(-?\d*\.\d*)\s*(\d)\s*(-?\d*\.\d*)\s*(\d*\.\d*)\s*(\d*\.\d*)\s*/) {
-			$inp{$1} = $_;
-		} else {
-			## If the row syntax does not fit the data format, we assume it to be a
-			## row belonging to the file header.
-			push(@header, $_);
-			$hdrRowCnt++;
-		}
-	}
-	close IN;
+    ## Look for data-containing rows.
+    if ( $_ =~ m/\s*(\d*\.\d*)\s*(-?\d*\.\d*)\s*(\d)\s*(-?\d*\.\d*)\s*(\d*\.\d*)\s*(\d*\.\d*)\s*/) {
+      $inp{$1} = $_;
+    } else {
+      ## If the row syntax does not fit the data format, we assume it to be a
+      ## row belonging to the file header.
+      push(@header, $_);
+      $hdrRowCnt++;
+    }
+  }
+  close IN;
 
-	## Open clean output file and write header rows first.
-	open(OUT, "> $inpFile") or die "Can't open output file: $!";
-	foreach (@header) { print OUT $_; }
+  ## Open clean output file and write header rows first.
+  open(OUT, "> $inpFile") or die "Can't open output file: $!";
+  foreach (@header) { print OUT $_; }
 
-	## Write rows into output file sorted according to the first "column".
-	my $prevSlack = 0;
-	foreach my $row (sort values %inp) {
-		## Check whether data set should be split by an empty line between
-		## periods/max delays fulfilling the constraint and those violating the
-		## constraint.
-		if ( $splitVio ) {
-			if ( $row =~ m/\s*(\d*\.\d*)\s*(-?\d*\.\d*)\s*(\d)\s*(-?\d*\.\d*)\s*(\d*\.\d*)\s*(\d*\.\d*)\s*/) {
-				## Add a blank line between constraints violating runs and
-				## constraints-fulfilling synthesis runs.
-				if ( $prevSlack < 0 and $4 >= 0 ) {
-					print OUT "\n";
-				}
-				print OUT "$row";
-				$prevSlack = $4;
-			}
-		} else {
-			print OUT "$row";
-		}
-	}
+  ## Write rows into output file sorted according to the first "column".
+  my $prevSlack = 0;
+  foreach my $row (sort values %inp) {
+    ## Check whether data set should be split by an empty line between
+    ## periods/max delays fulfilling the constraint and those violating the
+    ## constraint.
+    if ( $splitVio ) {
+      if ( $row =~ m/\s*(\d*\.\d*)\s*(-?\d*\.\d*)\s*(\d)\s*(-?\d*\.\d*)\s*(\d*\.\d*)\s*(\d*\.\d*)\s*/) {
+        ## Add a blank line between constraints violating runs and
+        ## constraints-fulfilling synthesis runs.
+        if ( $prevSlack < 0 and $4 >= 0 ) {
+          print OUT "\n";
+        }
+        print OUT "$row";
+        $prevSlack = $4;
+      }
+    } else {
+      print OUT "$row";
+    }
+  }
 }
