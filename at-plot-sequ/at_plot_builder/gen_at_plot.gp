@@ -153,7 +153,7 @@ set arrow from 0.87,180 to 0.87,280 as 1
 
 ## Do the actual plotting of the AT data.
 plot iso200(x) t '' ls 10, iso225(x) t '' ls 10, iso250(x) t '' ls 10, iso300(x) t '' ls 10, iso400(x) t '' ls 10, \
-     'at_data-less.dat' u ($6):($7/1000) t 'GCM-AES-128 - LUT S-box - Top-Down' w p ls 1
-     # 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
+  'at_data-less.dat' u ($6):($7/1000) t 'GCM-AES-128 - LUT S-box - Top-Down' w p ls 1
+  # 'bottom_up/at_data.dat' u ($6):($7/1000) t 'GCM-AES-128 - Canright S-box - Bottom-Up' w p ls 2
 
 ################################################################################
