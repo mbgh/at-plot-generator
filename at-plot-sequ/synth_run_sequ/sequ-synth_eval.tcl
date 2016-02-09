@@ -1,14 +1,14 @@
 ################################################################################
-## 
+##
 ## Author:       Michael Muehlberghuber
 ## Filename:     sequ-synth_eval.tcl
 ## Created:      Fri Sep  4 17:45:09 2015 (+0200)
 ## Last-Updated: Fri Sep  4 17:47:39 2015 (+0200)
-## 
+##
 ## Description:  Synthesis script for evaluating the size and the timing
 ##               information of a certain sequential design for several timing
 ##               constraints.
-## 
+##
 ################################################################################
 ################################################################################
 
@@ -28,31 +28,31 @@ set lib work
 ## Maximum frequencies respectively maximum I/O delays in nanoseconds, for which
 ## the design should be synthesized.
 set periods {
-	 10.00
-	 	6.00
-	 	5.00
-	 	4.50
-	 	4.00
-	 	3.50
-	 	3.00
-	 	2.56
-	 	2.50
-	 	2.25
-	 	2.00
-	 	1.90
-	 	1.80
-	 	1.70
-	 	1.60
+    10.00
+    6.00
+    5.00
+    4.50
+    4.00
+    3.50
+    3.00
+    2.56
+    2.50
+    2.25
+    2.00
+    1.90
+    1.80
+    1.70
+    1.60
     1.55
     1.50
-	 	1.45
-	 	1.40
-	 	1.35
-	 	1.30
-	 	1.20
-	 	1.25
-	 	1.00
-	 	0.00
+    1.45
+    1.40
+    1.35
+    1.30
+    1.20
+    1.25
+    1.00
+    0.00
 }
 
 ## Directory to be used as root for all the runs.
@@ -118,113 +118,113 @@ flush $runLog
 ## periods/max delays.
 foreach period $periods {
 
-		## Increment the synthesis runs counter.
-		incr run
+    ## Increment the synthesis runs counter.
+    incr run
 
-		## Start time of the compilation run.
-		set startTime "[clock seconds]"
+    ## Start time of the compilation run.
+    set startTime "[clock seconds]"
 
-		## Provide some information about the current run.
-		puts -nonewline $runLog "## Starting synthesis run $run of $runs ($entity-${period}ns) ... Start: "
-		puts -nonewline $runLog "[clock format $startTime -format ${timeFormat}]"
-		flush $runLog
+    ## Provide some information about the current run.
+    puts -nonewline $runLog "## Starting synthesis run $run of $runs ($entity-${period}ns) ... Start: "
+    puts -nonewline $runLog "[clock format $startTime -format ${timeFormat}]"
+    flush $runLog
 
-		## Subdirectory for current run with a certain period.
-		set currRunDir "$runDir/${entity}_${period}ns"
+    ## Subdirectory for current run with a certain period.
+    set currRunDir "$runDir/${entity}_${period}ns"
 
-		## For the reports directory, use a period-specific suffix.
-		set reportsDir "${currRunDir}/reports"
+    ## For the reports directory, use a period-specific suffix.
+    set reportsDir "${currRunDir}/reports"
 
-		## For the DDC directory, use a period-specific suffix.
-		set ddcDir "${currRunDir}/ddc"
+    ## For the DDC directory, use a period-specific suffix.
+    set ddcDir "${currRunDir}/ddc"
 
-		## Create the required directories.
-		file mkdir $currRunDir
-		file mkdir $reportsDir
-		file mkdir $ddcDir
+    ## Create the required directories.
+    file mkdir $currRunDir
+    file mkdir $reportsDir
+    file mkdir $ddcDir
 
-		## Start from a fresh design.
-		remove_design -design
-		sh rm -rf $lib/*
+    ## Start from a fresh design.
+    remove_design -design
+    sh rm -rf $lib/*
 
-		## Analyze the source files.
-		analyze -library $lib -format vhdl { \
-	    source1.vhd \
-	    source2.vhd \
-	    source3.vhd
-		}
+    ## Analyze the source files.
+    analyze -library $lib -format vhdl { \
+      source1.vhd \
+      source2.vhd \
+      source3.vhd
+    }
 
-		## Elaborate the current configuration.
-		elaborate $entity
+    ## Elaborate the current configuration.
+    elaborate $entity
 
 
-		## Setting the constraints.
-		############################################################################
+    ## Setting the constraints.
+    ############################################################################
 
-		## Set the clock period constraint.
-		create_clock Clk_CI -period $period
+    ## Set the clock period constraint.
+    create_clock Clk_CI -period $period
 
-		## Set a rough input delay for all inputs except the clock and the reset.
-		set_input_delay 0.1 -clock Clk_CI [remove_from_collection [all_inputs] {Clk_CI Reset_RBI}]
-		
-		## Set a rough output delay for all outputs.
-		set_output_delay 0.1 -clock Clk_CI [all_outputs]
-		
-		## Let a two-input MUX drive all the data inputs. Note that the following
-		## line depends on the actually utilized standard cell library.
-		set_driving_cell -library uk65lscllmvbbl_120c25_tc -lib_cell MXB2M1WA -pin Z [remove_from_collection [all_inputs] {Clk_CI Reset_RBI}]
-		
-		## Let a (middle-sized) clock buffer drive the clock and the reset
+    ## Set a rough input delay for all inputs except the clock and the reset.
+    set_input_delay 0.1 -clock Clk_CI [remove_from_collection [all_inputs] {Clk_CI Reset_RBI}]
+
+    ## Set a rough output delay for all outputs.
+    set_output_delay 0.1 -clock Clk_CI [all_outputs]
+
+    ## Let a two-input MUX drive all the data inputs. Note that the following
+    ## line depends on the actually utilized standard cell library.
+    set_driving_cell -library uk65lscllmvbbl_120c25_tc -lib_cell MXB2M1WA -pin Z [remove_from_collection [all_inputs] {Clk_CI Reset_RBI}]
+
+    ## Let a (middle-sized) clock buffer drive the clock and the reset
     ## signal. Note that the following line depends on the actually utilized
     ## standard cell library.
-		set_driving_cell -library uk65lscllmvbbl_120c25_tc -lib_cell CKBUFM4W -pin Z {Clk_CI Reset_RBI};
+    set_driving_cell -library uk65lscllmvbbl_120c25_tc -lib_cell CKBUFM4W -pin Z {Clk_CI Reset_RBI};
 
     ## Use four times the load of a (middle-sized) buffer for all outputs. Note
     ## that the following line depends on the actually utilized standard cell
     ## library.
-		set_load [expr 4 * [load_of uk65lscllmvbbl_120c25_tc/BUFM10W/A]] [all_output]
+    set_load [expr 4 * [load_of uk65lscllmvbbl_120c25_tc/BUFM10W/A]] [all_output]
 
-		############################################################################
+    ############################################################################
 
 
-		## Start compilation.
-		compile_ultra
-		
-		## Save compiled design.
-		write -f ddc -h -o $ddcDir/${entity}_compiled.ddc
+    ## Start compilation.
+    compile_ultra
 
-		## Create some reports.
-		check_design                                                                              > $reportsDir/check_design-compiled.rpt
-		report_area -hierarchy -nosplit                                                           > $reportsDir/area.rpt
-		report_cell -nosplit [all_registers]                                                      > $reportsDir/registers.rpt
-		report_reference -nosplit                                                                 > $reportsDir/references.rpt
-		report_constraint -nosplit                                                                > $reportsDir/constraints.rpt
-		report_timing -from [all_registers -clock_pins] -to [all_registers -data_pins]            > $reportsDir/timing_ss.rpt
-		report_timing -from [all_inputs] -to [all_registers -data_pins] -max_paths 10 -path end   > $reportsDir/timing_is.rpt
-		report_timing -from [all_registers -clock_pins] -to [all_outputs] -max_paths 10 -path end > $reportsDir/timing_so.rpt
-		report_timing -from [all_inputs] -to [all_outputs]                                        > $reportsDir/timing_io.rpt
+    ## Save compiled design.
+    write -f ddc -h -o $ddcDir/${entity}_compiled.ddc
 
-		## Print the end time to the synthesis run log.
-		set endTime "[clock seconds]"
-		puts -nonewline $runLog " - End: [clock format $endTime -format ${timeFormat}]"
+    ## Create some reports.
+    check_design                                                                              > $reportsDir/check_design-compiled.rpt
+    report_area -hierarchy -nosplit                                                           > $reportsDir/area.rpt
+    report_cell -nosplit [all_registers]                                                      > $reportsDir/registers.rpt
+    report_reference -nosplit                                                                 > $reportsDir/references.rpt
+    report_constraint -nosplit                                                                > $reportsDir/constraints.rpt
+    report_timing -from [all_registers -clock_pins] -to [all_registers -data_pins]            > $reportsDir/timing_ss.rpt
+    report_timing -from [all_inputs] -to [all_registers -data_pins] -max_paths 10 -path end   > $reportsDir/timing_is.rpt
+    report_timing -from [all_registers -clock_pins] -to [all_outputs] -max_paths 10 -path end > $reportsDir/timing_so.rpt
+    report_timing -from [all_inputs] -to [all_outputs]                                        > $reportsDir/timing_io.rpt
 
-		## Calculation the duration of the synthesis run and print it to the log.
-		set duration [expr {$endTime - $startTime}]
-		puts $runLog " - Duration: [clock format $duration -gmt 1 -format ${timeFormat}]"
-		flush $runLog
+    ## Print the end time to the synthesis run log.
+    set endTime "[clock seconds]"
+    puts -nonewline $runLog " - End: [clock format $endTime -format ${timeFormat}]"
 
-		## Create a short summary for the current synthesis run.
-		set sum "./$currRunDir/synthesis_summary.txt"
+    ## Calculation the duration of the synthesis run and print it to the log.
+    set duration [expr {$endTime - $startTime}]
+    puts $runLog " - Duration: [clock format $duration -gmt 1 -format ${timeFormat}]"
+    flush $runLog
 
-		echo "***** SYNTHESIS RUN SUMMARY *****" > $sum
-		echo "" >> $sum
-		echo "Entity:            $entity"     >> $sum
-		echo "Clock Constraint:  ${period}ns" >> $sum
-		echo "" >> $sum
-		echo "Starttime:         [clock format ${startTime}]" >> $sum
-		echo "Endtime:           [clock format ${endTime}]" >> $sum
-		echo "Duration:          [clock format $duration -gmt 1 -format ${timeFormat}]" >> $sum
-		echo "" >> $sum;
+    ## Create a short summary for the current synthesis run.
+    set sum "./$currRunDir/synthesis_summary.txt"
+
+    echo "***** SYNTHESIS RUN SUMMARY *****" > $sum
+    echo "" >> $sum
+    echo "Entity:            $entity"     >> $sum
+    echo "Clock Constraint:  ${period}ns" >> $sum
+    echo "" >> $sum
+    echo "Starttime:         [clock format ${startTime}]" >> $sum
+    echo "Endtime:           [clock format ${endTime}]" >> $sum
+    echo "Duration:          [clock format $duration -gmt 1 -format ${timeFormat}]" >> $sum
+    echo "" >> $sum;
 }
 
 ## Calculate the global duration of all synthesis runs.
